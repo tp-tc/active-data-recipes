@@ -58,14 +58,25 @@ def run(args):
     data = zip(data['user'], data['message'])
 
     count = defaultdict(int)
-    users = defaultdict(set)
+    users = defaultdict(lambda: defaultdict(int))
 
     for user, message in data:
         for k, v in d.items():
             if v['test'] in message:
                 count[k] += 1
-                users[k].add(user)
+                users[k][user] += 1
                 break
+
+    selector = "syntax"
+    return [["users", selector, "total"]] + sorted([
+        [user, users[selector][user],
+         sum((users[k][user] for k in users)),
+         users[selector][user]/sum((users[k][user] for k in users)),
+         {k: users[k][user] for k in users if users[k][user] > 0 and k != selector}
+         ]
+        for user in users[selector]
+        # if users[selector][user]/sum((users[k][user] for k in users)) > 0.5
+    ], key=lambda r: (round(r[1], -1), r[3]))
 
     count['total'] = sum(count.values())
     users['total'] = set(chain(*users.values()))
